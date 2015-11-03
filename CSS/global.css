@@ -1,0 +1,36 @@
+html {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    height: 100%;
+    width: 100%;
+    
+    display: table;
+}
+
+body > div {
+    height: 100%;
+    width: 100%;
+    
+    display: table-cell;
+    
+    vertical-align: middle;
+    text-align: center;
+}
+
+h1,h2,h3,h4,h5,h6 {
+    font-weight: bold;
+    text-align: center;
+}
+h1 { font-size: 160%; margin-bottom: 20px; }
+h2 { font-size: 140%; margin-bottom: 20px; }
+h3 { font-size: 120%; }
+
+.invisible { visibility: hidden !important; }
+
+/* Welcome */
+input#usernameInput {
+    margin: 10px 0;
+}
