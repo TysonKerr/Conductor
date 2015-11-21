@@ -1,10 +1,11 @@
-Type,Stimuli1
-Test,2
-Test,3
-Test,4
-Test,5
-Test,6
-Test,7
-Test,8
-Test,9
-TestAll,2::9
+Type,Stimuli1,Text,Settings
+Likert,2,Ready for the test?|No|Yes,1::7
+Test,2,,
+Test,3,,
+Test,4,,
+Test,5,,
+Test,6,,
+Test,7,,
+Test,8,,
+Test,9,,
+TestAll,2::9,,

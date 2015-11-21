@@ -9,7 +9,7 @@ var Test = {
              + ".trial.Test input { font-size: 100%; font-family: inherit; margin: -1px; }";
     },
     
-    prepareHTML: function() {
+    prepareHTML : function() {
         var cue = this.inputs["Cue"];
         var tar = this.inputs["Target"];
         var sep = ":";
@@ -22,5 +22,15 @@ var Test = {
                  + "</div>"
                  + "<button type='Submit'>Submit</button>";
         this.container.html(html);
+    },
+    
+    end : function() {
+        var tar = this.inputs["Target"];
+        var resp = this.recorded["Response"];
+        if (tar.trim().toLowerCase() === resp.trim().toLowerCase()) {
+            this.recorded["Accuracy"] = 1;
+        } else {
+            this.recorded["Accuracy"] = 0;
+        }
     }
 }

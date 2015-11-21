@@ -15,7 +15,7 @@
 <form method="POST" autocomplete="off">
     <div>Please enter your username, participant ID, or Mechanical Turk Worker ID below.</div>
     <?php if (isset($username) && strlen($username) < 3) echo '<div>Usernames must be at least 3 characters long.</div>'; ?>
-    <input type="text"   name="u" id="usernameInput">
+    <input type="text"   name="u" id="usernameInput" autofocus>
     <input type="hidden" name="t" value="<?= time() ?>">
     <?php
         if (isset($experiment)) {
@@ -38,6 +38,7 @@
             echo '<select name="c">';
             echo     '<option>0</option>';
             echo     '<option>1</option>';
+            echo     '<option>2</option>';
             echo '</select>';
         }
     ?>

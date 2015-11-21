@@ -36,6 +36,8 @@ function TrialType(inputs, container) {
     this.container.on("submit", function(e) {
         thisTrial.handleSubmit(e);
     });
+    
+    this.completed = false;
 }
 
 TrialType.prototype.prepareHTML = function() {
@@ -64,24 +66,51 @@ TrialType.prototype.prepareHTML = function() {
 }
 
 TrialType.prototype.startTrial = function() {
-    if (typeof this.Delay !== "undefined" && this.Delay > 0) {
-        setTimeout(this.showTrial, this.Delay*1000);
+    var delay;
+    if (typeof this.inputs.Delay !== "undefined") {
+        delay = parseFloat(this.inputs.Delay);
+        if (!isFinite(delay)) delay = 0;
+    } else {
+        delay = 0;
+    }
+    if (delay > 0) {
+        setTimeout(this.showTrial, delay*1000);
     } else {
         this.showTrial();
     }
 }
 
 TrialType.prototype.showTrial = function() {
+    var focus, duration, thisTrial = this;
     this.container.show().addClass("CurrentTrial");
     this.startTime = Date.now();
     
-    if (typeof this.Duration !== "undefined" && this.Duration > 0) {
+    if (typeof this.inputs.Duration !== "undefined") {
+        duration = parseFloat(this.inputs.Duration);
+        if (!isFinite(duration)) duration = -1;
+    } else {
+        duration = -1;
+    }
+    if (duration == 0) {
+        this.container.submit();
+    } else if (duration > 0) {
         setTimeout(function() {
-            this.container.submit();
-        }, this.Duration*1000);
+            thisTrial.container.submit();
+        }, duration*1000);
     }
     
-    this.container.find(":input:not(:radio,:checkbox,button,[type='button']), :submit").filter(":visible:enabled").first().focus();
+    // want to focus on first input, except if input type is radio or checkbox
+    // only focus on button if its the only button on the screen, and there are no other things to focus on
+    focus = this.container.find("input:not([type='button'],[type='radio'],[type='checkbox'])");
+    focus.filter(":visible:enabled");
+    if (focus.length === 0) {
+        focus = this.container.find("input[type='button'], button").filter(":visible:enabled");
+        if (focus.length === 1) {
+            focus.focus();
+        }
+    } else {
+        focus.first().focus();
+    }
     
     this.start();
 }
@@ -96,7 +125,7 @@ TrialType.prototype.handleSubmit = function(e) {
 }
 
 TrialType.prototype.fin = function() {
-    var resp = {};
+    var resp = this.recorded;
     resp["Trial Duration"] = Date.now() - this.startTime;
     resp["Show Time"] = this.startTime;
     resp["Raw Input"] = this.container.serialize();
@@ -119,6 +148,8 @@ TrialType.prototype.fin = function() {
     Experiment.resp[thisIndex] = resp;
     Experiment.unsavedResp.push(thisIndex);
     
+    this.completed = true;
+    
     this.end();
     
     this.container.removeClass("CurrentTrial").hide();
@@ -136,7 +167,6 @@ TrialType.prototype.end = function() {
 var Experiment = {
     username : null,
     loginTime : null,
-    current : null,
     data : null,
     resp : null,
     unsavedResp : [],
@@ -144,9 +174,8 @@ var Experiment = {
     display : null,
     types : [],
     
-    
     startExp : function() {
-        var exp, procLen, newTrial, newContainer, trialData;
+        var exp, procLen, newTrial, newContainer, trialData, i, respLen;
         
         exp = this;
         
@@ -156,16 +185,25 @@ var Experiment = {
         this.username = window.loginData.u;
         this.loginTime = window.loginData.t;
         
+        // load proc and stim data
         this.data = window.expData;
-        this.processOldResp();
         
-        this.current = this.resp.length;
-        
+        // create trials in Experiment.trials array, also add trial form html to page
         procLen = this.data.Procedure.length;
-        
-        for (var i=0; i<procLen; ++i) {
+        for (i=0; i<procLen; ++i) {
             trialData = this.assembleTrialData(this.data.Procedure[i]);
             this.addTrial(trialData);
+        }
+        
+        // load up old responses, mark completed trials as completed
+        this.processOldResp();
+        for (i=0, respLen=this.resp.length; i<respLen; ++i) {
+            if (typeof this.trials[i] === "undefined") {
+                // thats weird, we have more responses than trials
+                continue;
+            }
+            this.trials[i].recorded = this.resp[i];
+            this.trials[i].completed = true;
         }
         
         this.doCurrentTrial();
@@ -187,9 +225,17 @@ var Experiment = {
             temp = {};
             for (j=0, hLen = head.length; j<hLen; ++j) {
                 if (typeof oldResp[i][j] === "undefined") {
-                    temp[head[j]] = "";
+                    if (head[j].trim().substr(-2) === "[]") {
+                        temp[head[j]] = [];
+                    } else {
+                        temp[head[j]] = "";
+                    }
                 } else {
-                    temp[head[j]] = oldResp[i][j];
+                    if (head[j].trim().substr(-2) === "[]") {
+                        temp[head[j]] = oldResp[i][j].split('|');
+                    } else {
+                        temp[head[j]] = oldResp[i][j];
+                    }
                 }
             }
             resp.push(temp);
@@ -205,15 +251,16 @@ var Experiment = {
         for (col in procRow) {
             output[col] = procRow[col];
             if (col.substr(0, 7) === "Stimuli") {
-                stimFile = parseInt(col.substr(7)) - 1;
-                stimRows = rangeToArray(procRow[col]);
+                stimFile = parseInt(col.substr(7)) - 1; // convert "Stimuli 1" to 0, for 0-indexed stim file list
+                stimRows = rangeToArray(procRow[col]);  // get the rows pulled from this stim file
                 
                 stimData = [];
                 len = stimRows.length;
                 for (i=0; i<len; ++i) {
-                    stimData.push(this.data.Stimuli[stimFile][stimRows[i]-2]);
+                    stimData.push(this.data.Stimuli[stimFile][stimRows[i]-2]); // get the data of each row
                 }
                 
+                // convert to array of columns, rows joined by "|"
                 stimByCol = {};
                 for (stimCol in stimData[0]) {
                     stimByCol[stimCol] = [];
@@ -228,7 +275,7 @@ var Experiment = {
         return output;
     },
     
-    addTrial : function(inputs) {
+    addTrial : function(inputs, index) {
         if (typeof inputs.Type === "undefined") {
             // some error message here
             return;
@@ -239,7 +286,6 @@ var Experiment = {
         }
         
         newContainer = $("<form>");
-        newContainer.attr("id", "trial"+this.trials.length);
         newContainer.hide();
         
         this.display.append(newContainer);
@@ -247,7 +293,11 @@ var Experiment = {
         newTrial = new TrialType(inputs, newContainer);
         newTrial.prepareHTML();
         
-        this.trials.push(newTrial);
+        if (index === undefined) {
+            this.trials.push(newTrial);
+        } else {
+            this.trials.splice(index, 0, newTrial);
+        }
     },
     
     loadCSS(type) {
@@ -264,15 +314,28 @@ var Experiment = {
     },
     
     doCurrentTrial : function() {
-        var procLen = this.data.Procedure.length;
+        var trialsLen, i, currentIndex;
         
-        if (this.current >= procLen) {
+        // find the trial object which isn't marked as completed yet
+        currentIndex = -1;
+        trialsLen = this.trials.length;
+        for (i=0; i<trialsLen; ++i) {
+            if (!this.trials[i].completed) {
+                currentIndex = i;
+                break;
+            }
+        }
+        
+        if (currentIndex === -1) {
+            if (this.unsavedResp.length > 0) { // for now, do it after every 2 trials
+                this.recordUnsavedResp();
+            }
             var doneContainer = $("<div>");
             doneContainer.attr("id", "DoneContainer");
             doneContainer.html("You are all done! Verification code: XXXX-XXXXXXXXXX");
             this.display.append(doneContainer);
         } else {
-            this.trials[this.current].startTrial();
+            this.trials[currentIndex].startTrial();
         }
     },
     
@@ -283,18 +346,26 @@ var Experiment = {
         if (this.unsavedResp.length > 1) { // for now, do it after every 2 trials
             this.recordUnsavedResp();
         }
-        ++this.current;
         this.doCurrentTrial();
     },
     
     recordUnsavedResp : function() {
         var responses = [];
         var submit = {};
-        var i, len;
-        var trial, trialData;
+        var i, j, len, respLen, row;
+        var records, rec;
         var trials = this.unsavedResp;
         for (i=0, len=trials.length; i<len; ++i) {
-            responses.push(this.resp[trials[i]]);
+            row = {};
+            records = this.trials[trials[i]].recorded;
+            for (rec in records) {
+                if (rec.trim().substr(-2) === '[]') {
+                    row[rec] = records[rec].join('|');
+                } else {
+                    row[rec] = records[rec];
+                }
+            }
+            responses.push(row);
         }
         this.unsavedResp = []; // so we dont try to save this data again while we wait for the ajax to go through
         submit.u = this.username;

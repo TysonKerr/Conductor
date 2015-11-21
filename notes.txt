@@ -1,0 +1,104 @@
+in Experiment.js, there are 2 main objects: Experiment, and Trial
+
+Experiment is the parent object, holding the collection of Trials.
+Experiment controls loading up the raw procedure, stimuli, and response data, 
+as well as the username and timestamp. It also controls sending the data back 
+to the server periodically, although Trials themselves hold the response data.
+
+When Experiment initializes on Window load, it first reads in the stimuli and 
+procedure data provided. Then it creates a new Trial for every row in the 
+procedure that it finds, merging in the stimuli as necessary. Next it checks 
+how many responses already exist, and marks that number of trials as completed.
+So, if it finds that there are already 14 rows of responses, the first 14 
+Trials will be marked as completed, and skipped. The old responses will also 
+be fed back into Trials, so that they appear to hold the same data as before
+the page was revisited (more on this in the Trials section). Finally, it finds
+the first Trial not marked as completed, and starts that.
+
+Trials are made by using the function Trial() as an object, like so:
+var newTrial = new Trial(inputs, container);
+The inputs are the merged array of the procedure row and any relevant
+stimuli. The container is the form that this trial controls. Experiment 
+handles assembling the inputs, creating the form, and then passing these
+into the Trials construction.
+
+Once a Trial has been created, it checks the inputs for "Type", and tries to
+find the matching windows object with the same name (i.e., it finds the code 
+for that trial type). For example, if "Type" is "Instruct", and a trial type
+for "instruct" has created the "Instruct" object, then this object is targetted
+by the new Trial. Once Trial has found its Type target, it copies all the properties
+from the trial type to itself. This way, if Instruct has a method defined like so:
+```
+var Instruct = {
+    prepareHtml : function() {
+        this.container.html("Hello world!");
+    }
+}
+```
+Then Trial can call this.prepareHtml(). The reason I imported the Instruct properties
+like this was so that keyword "this" inside the function prepareHtml() refers to 
+the calling Trial, and not the global Instruct object. So, the method can access 
+all the info it needs, such as this.container, this.inputs, and so on.
+
+Trial will call its prepareHtml() method as soon as it is initialized, as well as
+add an event listener to its container (which is a form), listening for the "submit"
+event, and run its handleSubmit() method in response. This function cancels the submit
+and runs the Trial's fin() method, which handles saving the actual responses into
+Trials.recorded, as well as calculating a few other values, such as trial duration.
+At the end of fin(), the Trial also calls its end() function, which does nothing by
+default. But, end() can be overridden by the specific trial type. This can be used
+to create custom scoring, such as:
+```
+var cuedRecall = {
+    prepareHtml : function() {
+        this.container.html(this.inputs.Cue + " : <input name='Response'>");
+    },
+    
+    end : function() {
+        var resp = this.recorded.Response;
+        if (resp === this.inputs.Answer) {
+            this.recorded.customScore = 1;
+        } else {
+            this.recorded.customScore = 0;
+        }
+    }
+}
+```
+Finally, the Trial marks itself as incomplete, by setting the property `Complete = false;`. 
+If responses have already been collected for this trial (for example, if this page is loading 
+because the participant refreshed the page after finishing a few trials), then Experiment will
+later mark this Trial as complete and put the old responses back into Trial.recorded
+
+However, even after all this work, the Trial hasn't actually been shown yet. All this simply
+happens when the page loads, to prepare the experiment. Once Experiment has finished loading
+all the Trials and marking the already complete Trials as complete, its ready to show the first
+incomplete Trial. It does this by simply looping through the trials until it finds the first
+Trial.Complete == false, and then running that Trial's startTrial() method. This method checks
+to see if one of the inputs (i.e., one of the columns in the stim or proc file) is "Delay", and
+if this Delay column contains a number greater than 0. If so, it uses setTimeout() to delay the 
+beginning of the trial for that many seconds. Otherwise, it runs the function showTrial()
+immediately. 
+
+The showTrial() method actually shows the trial, using this.container.show(), as well as marking
+the current timestamp, so that trial duration can be calculated. If one of the input columns
+is "Duration" and this specifies some non-negative number, then the trial will be automatically
+submitted after this many seconds. It is possible to put trial duration to 0. This method will
+also focus on the first element, with certain constraints. For the first pass, it wont target
+buttons (either <input type="button"> or <button></button>), radio, or checkboxes. If it doesn't
+find anything, and there is only one button on the screen, it will focus on that. Finally, it runs
+this.start(), which is another empty function that can be overridden by the specific trial type.
+So, if you want to start a timer from the moment the trial is displayed, define the start() function
+inside the trial type, and this Trial will import that method.
+
+As mentioned above, once the Trial's form is submitted, it cancels the submit and 
+records the responses into the Trial.recorded object. It also calculates
+a few other values, like trial duration. Then, it reports back to Experiment,
+telling Experiment its recorded data, as well as its index (proc row, basically).
+Then, Trial sets its completed property to true, and runs its end() method, which
+is another custom defined methods in the trial type.
+
+Finally, Trial tells Experiment to run Experiment.advanceTrial(). This method
+first checks if the data should be ajax'ed back to the server, which 
+currently occurs every 2 trials. Then, Experiment uses its doCurrentTrial()
+method, which will find the next Trial with complete == false, and the process
+will start again.
