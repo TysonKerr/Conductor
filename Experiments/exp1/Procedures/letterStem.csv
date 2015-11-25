@@ -1,0 +1,18 @@
+Type,Stimuli1,Stem Length,Text
+CuedLetterStem,2,2,
+CuedLetterStem,3,2,
+CuedLetterStem,4,2,
+CuedLetterStem,5,2,
+CuedLetterStem,6,2,
+CuedLetterStem,7,2,
+CuedLetterStem,8,2,
+CuedLetterStem,9,2,
+Instruct,,,And now with 1 stem!
+CuedLetterStem,2,1,
+CuedLetterStem,3,1,
+CuedLetterStem,4,1,
+CuedLetterStem,5,1,
+CuedLetterStem,6,1,
+CuedLetterStem,7,1,
+CuedLetterStem,8,1,
+CuedLetterStem,9,1,

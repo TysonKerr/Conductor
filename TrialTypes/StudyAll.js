@@ -1,5 +1,5 @@
-var StudyAll = {
-    addCSS : function() {
+window['trialTypes']['StudyAll'] = {
+    style: function() {
         return ".trial.StudyAll { font-size: 200%; text-align: center; } "
              + ".trial.StudyAll span { display: inline-block; width: 48%; } "
              + ".trial.StudyAll span:nth-child(1) { text-align: right; } "
@@ -7,25 +7,28 @@ var StudyAll = {
              + ".trial.StudyAll span:nth-child(3) { text-align: left; } ";
     },
     
+    htmlTemplate: function() {
+        return "<div>"
+             +    "<span>{Cue}</span>"
+             +    "<span>:</span>"
+             +    "<span>{Target}</span>"
+             + "</div>"
+    },
+    
     prepareHTML: function() {
         var cues = this.inputs["Cue"].split('|');
         var tars = this.inputs["Target"].split('|');
-        var sep = ":";
         
-        var html = "";
+        var html = "", htmlBlock;
+        var template = this.htmlTemplate();
         var i, len;
-        var cue, tar;
         for (i=0, len=cues.length; i<len; ++i) {
-            cue = cues[i];
-            tar = tars[i];
-            html += "<div>"
-                 +     "<span>"+cue+"</span>"
-                 +     "<span>"+sep+"</span>"
-                 +     "<span>"+tar+"</span>"
-                 +  "</div>"
+            htmlBlock = template;
+            htmlBlock = htmlBlock.replace("{Cue}",    cues[i]);
+            htmlBlock = htmlBlock.replace("{Target}", tars[i]);
+            html += htmlBlock;
         }
         html += "<button type='Submit'>Submit</button>";
-        this.container.html(html);
         this.container.html(html);
     }
 }

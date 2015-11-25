@@ -1,3 +1,18 @@
+Experiment.addTrial() x Proc Rows - build Trial
+    window.trialTypes[inputs.Type].addCss() - load custom CSS from trial types
+    Trial.prepareHtml() - create each trial type's <form>
+
+Experiment.doCurrentTrial() - do first Trial with Trial.completed == false
+    Trial.startTrial() - delay
+    Trial.showTrial() - show form
+ -o Trial.start()     - custom start code
+    Trial.handleSubmit()  - prevent default
+    Trial.fin()       - record data, mark completed
+ -o Trial.end()       - custom end code
+    Experiment.advanceTrial() - choose to ajax data, restart loop with doCurrentTrial()
+
+
+    
 in Experiment.js, there are 2 main objects: Experiment, and Trial
 
 Experiment is the parent object, holding the collection of Trials.

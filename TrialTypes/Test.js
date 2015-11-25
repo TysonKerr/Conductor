@@ -1,5 +1,5 @@
-var Test = {
-    addCSS : function() {
+window['trialTypes']['Test'] = {
+    style: function() {
         return ".trial.Test { font-size: 200%; text-align: center; font-family: Arial; } "
              + ".trial.Test div { margin: 15px; } "
              + ".trial.Test span { display: inline-block; width: 48%; } "
@@ -9,22 +9,16 @@ var Test = {
              + ".trial.Test input { font-size: 100%; font-family: inherit; margin: -1px; }";
     },
     
-    prepareHTML : function() {
-        var cue = this.inputs["Cue"];
-        var tar = this.inputs["Target"];
-        var sep = ":";
-        var inp = "<input type='text' name='Response'>";
-        
-        var html = "<div>"
-                 +    "<span>"+cue+"</span>"
-                 +    "<span>"+sep+"</span>"
-                 +    "<span>"+inp+"</span>"
-                 + "</div>"
-                 + "<button type='Submit'>Submit</button>";
-        this.container.html(html);
+    htmlTemplate: function() {
+        return "<div>"
+             +    "<span>[Cue]</span>"
+             +    "<span>:</span>"
+             +    "<span><input type='text' name='Response'></span>"
+             + "</div>"
+             + "<button type='Submit'>Submit</button>";
     },
     
-    end : function() {
+    end: function() {
         var tar = this.inputs["Target"];
         var resp = this.recorded["Response"];
         if (tar.trim().toLowerCase() === resp.trim().toLowerCase()) {

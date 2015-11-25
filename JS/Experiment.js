@@ -15,9 +15,10 @@ function TrialType(inputs, container) {
     
     thisType = this.inputs.Type;
     
-    this.type = window[thisType];
+    this.type = window['trialTypes'][thisType];
     for (prop in this.type) {
         // skip reserved method names
+        if (prop === "style")      continue;
         if (prop === "init")       continue;
         if (prop === "fin")        continue;
         if (prop === "startTrial") continue;
@@ -40,29 +41,29 @@ function TrialType(inputs, container) {
     this.completed = false;
 }
 
+TrialType.prototype.htmlTemplate = function() {
+    return "<p>Welcome to the Conductor! To make a new trial type, "
+         + "make a file in the JS folder of this program, and have "
+         + "this file create an object with a prepareHTML method to "
+         + "define the HTML of this trial type. For example:</p>"
+         + "<pre style='text-align: left; border: 2px solid #CCC; "
+         + "background-color: #EEE; padding: 2px'>"
+         + "var newTrialType = {\n"
+         + "    prepareHTML : function() {\n"
+         + "        this.container.html(\n"
+         + "            \"Hello there! This will show up to participants!\"\n"
+         + "        );\n"
+         + "    }\n"
+         + "}"
+         + "</pre>"
+         + "<button type='submit'>Click here to proceed</button>"
+}
+
 TrialType.prototype.prepareHTML = function() {
     // this should be overridden by the specific trial type
-    this.container.width(800);
-    this.container.css("margin", "0 auto");
-    this.container.html(
-        "<p>Welcome to the Conductor! To make a new trial type, "
-       +"make a file in the JS folder of this program, and have "
-       +"this file create an object with a prepareHTML method to "
-       +"define the HTML of this trial type. For example:</p> <pre>"
-       +"var newTrialType = {\n"
-       +"    prepareHTML : function() {\n"
-       +"        this.container.html(\n"
-       +"            \"Hello there! This will show up to participants!\"\n"
-       +"        );\n"
-       +"    }\n"
-       +"}</pre>\n"
-       +"<button type='submit'>Click here to proceed</button>"
-    );
-    var pre = this.container.find("pre");
-    pre.css("text-align", "left");
-    pre.css("border", "2px solid #CCC");
-    pre.css("background-color", "#EEE");
-    pre.css("padding", "2px");
+    var html = this.htmlTemplate();
+    html = fillHtmlTemplate(html, this.inputs);
+    this.container.html(html);
 }
 
 TrialType.prototype.startTrial = function() {
@@ -188,6 +189,9 @@ var Experiment = {
         // load proc and stim data
         this.data = window.expData;
         
+        // load css from types
+        this.loadCSS();
+        
         // create trials in Experiment.trials array, also add trial form html to page
         procLen = this.data.Procedure.length;
         for (i=0; i<procLen; ++i) {
@@ -281,10 +285,6 @@ var Experiment = {
             return;
         }
         
-        if (this.types.indexOf(inputs.Type) === -1) {
-            this.loadCSS(inputs.Type);
-        }
-        
         newContainer = $("<form>");
         newContainer.hide();
         
@@ -300,16 +300,14 @@ var Experiment = {
         }
     },
     
-    loadCSS(type) {
-        this.types.push(type);
-        if (typeof window[type] === "undefined") {
-            // type doesn't exist... problem
-            return;
-        }
-        if (typeof window[type].addCSS === "function") {
-            var css = $("<style>");
-            css.html(window[type].addCSS());
-            $("head").append(css);
+    loadCSS() {
+        var type;
+        for (type in window['trialTypes']) {
+            if (typeof window['trialTypes'][type].style === "function") {
+                var css = $("<style>");
+                css.html(window['trialTypes'][type].style());
+                $("head").append(css);
+            }
         }
     },
     
@@ -396,6 +394,16 @@ var Experiment = {
 window.addEventListener("load", function() {
     Experiment.startExp();
 });
+
+function fillHtmlTemplate(template, values) {
+    var html = template;
+    var reg;
+    for (val in values) {
+        reg = new RegExp("\\[" + val + "\\]", "ig");
+        html = html.replace(reg, values[val]);
+    }
+    return html;
+}
 
 function rangeToArray(string, sep, con) {
     var output, ranges, len, i, range, start, end, count, step, j;

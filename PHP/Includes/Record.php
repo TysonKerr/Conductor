@@ -25,7 +25,7 @@
         }
         
         foreach ($row as &$datum) {
-            $datum = str_replace(array("\r\n", "\n", "\t", "\r", chr(10), chr(13)), ' ', $datum);
+            $datum = str_replace(array("\r\n", "\r", "\n", "\t"), ' ', $datum);
         }
         unset($datum);
         

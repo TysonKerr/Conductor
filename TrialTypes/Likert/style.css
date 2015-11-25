@@ -1,0 +1,15 @@
+.trial.Likert { width: 100%; max-width: 600px; margin: auto; }
+.trial.Likert input[type='radio'] { display: none; }
+.trial.Likert .LikertQuestion { font-size: 150%; }
+
+.trial.Likert .LikertDescript { color: #666; }
+.trial.Likert .LikertDescript div { display: inline-block; }
+.trial.Likert .LikertLeft  { width: 50%; text-align: left; }
+.trial.Likert .LikertRight { width: 50%; text-align: right; }
+
+.trial.Likert .LikertTable { width: 100%; display: table; margin: 5px auto 10px; }
+.trial.Likert .LikertTable > div { width: 100%; display: table-row; }
+.trial.Likert .LikertTable > div > label { display: table-cell; vertical-align: middle; text-align: center; }
+.trial.Likert .LikertTable span { border: 2px solid #FFF; padding: 4px 8px; border-radius: 25px; display: inline-block; }
+.trial.Likert .LikertTable input:checked + span { border-color: green; }
+.trial.Likert .LikertTable label:hover span { border-color: #0F0; }

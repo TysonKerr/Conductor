@@ -1,0 +1,7 @@
+.trial.TestAll { font-size: 200%; text-align: center; font-family: Arial; }
+.trial.TestAll div { margin: 15px; }
+.trial.TestAll span { display: inline-block; width: 48%; }
+.trial.TestAll span:nth-child(1) { text-align: right; }
+.trial.TestAll span:nth-child(2) { width: 2%; }
+.trial.TestAll span:nth-child(3) { text-align: left; }
+.trial.TestAll input { font-size: 100%; font-family: inherit; margin: -1px; }
